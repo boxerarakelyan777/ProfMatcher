@@ -1,8 +1,12 @@
 'use client'
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
 import { useSpring as useReactSpring, animated } from 'react-spring';
-// Import other necessary libraries for animations and effects
+import { FaTwitter, FaFacebookF, FaLinkedinIn } from 'react-icons/fa';
+import { initializeApp } from 'firebase/app';
+import { db } from '../firebaseConfig';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
 
 const Hero: React.FC = () => {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -21,6 +25,56 @@ const Hero: React.FC = () => {
   const textY = useTransform(smoothScrollYProgress, [0, 1], ['0%', '100%']);
 
   const [{ glowStrength }, setGlowStrength] = useReactSpring(() => ({ glowStrength: 0 }));
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleWaitlistClick = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setIsSubmitted(false);
+    setName('');
+    setEmail('');
+    setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Basic client-side validation
+      if (!name.trim() || !email.trim()) {
+        throw new Error('Name and email are required');
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new Error('Invalid email format');
+      }
+
+      // Add to Firestore
+      await addDoc(collection(db, 'waitlist'), {
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+        timestamp: serverTimestamp()
+      });
+
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      setError(error instanceof Error ? error.message : 'An error occurred. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Initialize particle effects, mouse interaction effects, etc.
@@ -92,8 +146,8 @@ const Hero: React.FC = () => {
               Join the waitlist for early access to personalized professor recommendations and real-time sentiment tracking.
             </motion.p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <animated.a 
-                href="#waitlist" 
+              <animated.button 
+                onClick={handleWaitlistClick}
                 onMouseEnter={() => setGlowStrength({ glowStrength: 1 })}
                 onMouseLeave={() => setGlowStrength({ glowStrength: 0 })}
                 style={{
@@ -105,7 +159,7 @@ const Hero: React.FC = () => {
                 className="inline-block text-white font-bold py-4 px-8 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 backdrop-filter backdrop-blur-sm bg-opacity-30"
               >
                 Join the Waitlist
-              </animated.a>
+              </animated.button>
               <a 
                 href="#learn-more" 
                 className="inline-block bg-transparent border-2 border-[#3498DB] text-[#3498DB] hover:bg-[#3498DB] hover:text-white font-bold py-4 px-8 rounded-lg transition duration-300 ease-in-out"
@@ -131,6 +185,83 @@ const Hero: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Waitlist Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-gradient-to-br from-white to-[#F0F4F8] text-[#2C3E50] rounded-2xl p-8 max-w-lg w-full mx-auto shadow-2xl border border-[#3498db]/30"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-[#3498db] to-[#8e44ad] text-transparent bg-clip-text">Join the Future</h2>
+              <button onClick={handleCloseModal} className="text-gray-400 hover:text-[#2C3E50] transition-colors">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {!isSubmitted ? (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-[#2C3E50] mb-1">Name</label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="w-full p-3 bg-white border border-[#3498db]/30 rounded-lg focus:outline-none focus:border-[#3498db] transition-colors"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-[#2C3E50] mb-1">Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="w-full p-3 bg-white border border-[#3498db]/30 rounded-lg focus:outline-none focus:border-[#3498db] transition-colors"
+                    required
+                  />
+                </div>
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-gradient-to-r from-[#3498db] to-[#8e44ad] text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Submitting...' : 'Secure Your Spot'}
+                </button>
+              </form>
+            ) : (
+              <div className="text-center">
+                <p className="text-2xl font-semibold mb-4 text-[#2C3E50]">Welcome aboard, {name}!</p>
+                <p className="text-green-600 mb-6">You've successfully joined our exclusive waitlist.</p>
+                <p className="text-sm text-[#2C3E50] mb-4">Help us revolutionize education:</p>
+                <div className="flex justify-center space-x-4">
+                  <button className="bg-[#1da1f2] p-2 rounded-full hover:bg-[#1a91da] transition-colors">
+                    <FaTwitter className="w-5 h-5 text-white" />
+                  </button>
+                  <button className="bg-[#4267B2] p-2 rounded-full hover:bg-[#365899] transition-colors">
+                    <FaFacebookF className="w-5 h-5 text-white" />
+                  </button>
+                  <button className="bg-[#0e76a8] p-2 rounded-full hover:bg-[#0b5f8a] transition-colors">
+                    <FaLinkedinIn className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+            )}
+            <p className="mt-6 text-xs text-[#2C3E50] text-center">
+              By joining, you agree to our <a href="#" className="text-[#3498db] hover:underline">Privacy Policy</a> and <a href="#" className="text-[#3498db] hover:underline">Terms of Service</a>.
+            </p>
+          </motion.div>
+        </div>
+      )}
 
       {/* Scroll-triggered animations */}
       <div className="scroll-animations">

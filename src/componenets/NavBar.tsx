@@ -34,7 +34,7 @@ const Navbar: React.FC = () => {
           </Link>
           <div className="flex items-center lg:order-2">
           <Link href="#waitlist" className="hidden lg:inline-block text-off-white bg-neon-purple hover:bg-electric-blue transition-colors duration-300 font-medium rounded-full text-sm px-5 py-2.5 mr-2 shadow-lg focus:outline-none focus:ring-2 focus:ring-electric-blue">
-            Join the Waitlist
+            Coming Soon
           </Link>
           </div>
           <div className="hidden lg:flex items-center space-x-6">
@@ -93,7 +93,7 @@ const Navbar: React.FC = () => {
             </li>
             <li>
               <Link href="#waitlist" className="inline-block text-off-white bg-neon-purple hover:bg-electric-blue transition-colors duration-300 font-medium rounded-full text-lg px-6 py-3 shadow-lg focus:outline-none focus:ring-2 focus:ring-electric-blue">
-                Join the Waitlist
+                Coming Soon
               </Link>
             </li>
           </ul>
