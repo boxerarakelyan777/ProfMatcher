@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 const Team: React.FC = () => {
   return (
@@ -70,10 +71,12 @@ interface TeamMemberProps {
 const TeamMember: React.FC<TeamMemberProps> = ({ name, title, description, imgSrc, linkedIn, github, twitter }) => {
   return (
     <div className="bg-midnight-blue rounded-lg shadow-lg hover:shadow-2xl transition-shadow duration-300 p-6 flex flex-col items-center text-center">
-      <img
+      <Image
         className="w-full h-auto rounded-lg mb-6 object-cover"
         src={imgSrc}
         alt={`${name} Avatar`}
+        width={200}
+        height={200}
       />
       <h3 className="text-2xl font-semibold mb-2">{name}</h3>
       <span className="text-lg font-light text-neon-purple mb-4">{title}</span>
