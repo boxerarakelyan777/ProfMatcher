@@ -1,6 +1,39 @@
-import React from 'react';
+'use client'
+
+import React, { useEffect, useRef } from 'react';
 
 const Features: React.FC = () => {
+  const featureRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('fade-in-up');
+          } else {
+            entry.target.classList.remove('fade-in-up');
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    featureRefs.current.forEach((ref) => {
+      if (ref) {
+        observer.observe(ref);
+      }
+    });
+
+    return () => {
+      featureRefs.current.forEach((ref) => {
+        if (ref) {
+          observer.unobserve(ref);
+        }
+      });
+    };
+  }, []);
+
   return (
     <section id="features" className="py-24 bg-gradient-to-b from-off-white to-white relative">
       {/* Top decorative divider */}
@@ -15,26 +48,40 @@ const Features: React.FC = () => {
           Features
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-          <FeatureCard
-            title="AI Support Agent"
-            description="Instant, accurate professor information using Pinecone-stored data."
-            icon="🔍"
-          />
-          <FeatureCard
-            title="Automated Data Integration"
-            description="Submit professor URLs, and our AI will scrape and store the data."
-            icon="🔗"
-          />
-          <FeatureCard
-            title="Advanced Search & Recommendations"
-            description="Find professors based on personalized criteria like teaching style and feedback."
-            icon="🎯"
-          />
-          <FeatureCard
-            title="Sentiment Analysis & Trend Tracking"
-            description="Track shifts in ratings and sentiment over time."
-            icon="📊"
-          />
+          {[
+            {
+              title: 'AI Support Agent',
+              description: 'Instant, accurate professor information using Pinecone-stored data.',
+              icon: '🔍'
+            },
+            {
+              title: 'Automated Data Integration',
+              description: 'Submit professor URLs, and our AI will scrape and store the data.',
+              icon: '🔗'
+            },
+            {
+              title: 'Advanced Search & Recommendations',
+              description: 'Find professors based on personalized criteria like teaching style and feedback.',
+              icon: '🎯'
+            },
+            {
+              title: 'Sentiment Analysis & Trend Tracking',
+              description: 'Track shifts in ratings and sentiment over time.',
+              icon: '📊'
+            }
+          ].map((feature, index) => (
+            <FeatureCard
+              key={index}
+              title={feature.title}
+              description={feature.description}
+              icon={feature.icon}
+              ref={(el) => {
+                if (el) {
+                  featureRefs.current[index] = el;
+                }
+              }}
+            />
+          ))}
         </div>
       </div>
 
@@ -54,9 +101,12 @@ interface FeatureCardProps {
   icon: string;
 }
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon }) => {
+const FeatureCard = React.forwardRef<HTMLDivElement, FeatureCardProps>(({ title, description, icon }, ref) => {
   return (
-    <div className="bg-white text-midnight-blue rounded-xl shadow-lg hover:shadow-2xl hover:transform hover:scale-105 transition-transform duration-300 p-8 relative">
+    <div
+      ref={ref}
+      className="bg-white text-midnight-blue rounded-xl shadow-lg hover:shadow-2xl transition-transform duration-300 p-8 relative opacity-0"
+    >
       <div className="text-4xl absolute top-0 right-0 p-4 text-electric-blue">
         {icon}
       </div>
@@ -67,6 +117,8 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon }) =
       </div>
     </div>
   );
-};
+});
+
+FeatureCard.displayName = 'FeatureCard';
 
 export default Features;

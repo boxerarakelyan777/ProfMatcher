@@ -2,7 +2,7 @@ import React from 'react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="p-4 bg-gray-50 sm:p-6 dark:bg-gray-800 mt-auto">
+    <footer className="p-4 bg-gray-50 sm:p-6 dark:bg-gray-800 mt-auto w-full">
       <div className="mx-auto max-w-screen-xl">
         <div className="md:flex md:justify-between">
           <div className="mb-6 md:mb-0">
@@ -17,7 +17,7 @@ const Footer: React.FC = () => {
               <h2 className="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Follow us</h2>
               <ul className="text-gray-600 dark:text-gray-400">
                 <li className="mb-4">
-                  <a href="https://github.com/boxerarakelyan777/MemorixAI" className="hover:underline">GitHub</a>
+                  <a href="https://github.com/boxerarakelyan777/ProfMatcher" className="hover:underline">GitHub</a>
                 </li>
                 <li>
                   <a href="https://www.tiktok.com/@memorixai " className="hover:underline">TikTok</a>

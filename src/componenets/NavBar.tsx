@@ -32,33 +32,52 @@ const Navbar: React.FC = () => {
               ProfTracker
             </span>
           </Link>
-          <div className="flex items-center">
-            <Link href="#waitlist" className="hidden lg:inline-block text-off-white bg-neon-purple hover:bg-electric-blue transition-colors duration-300 font-medium rounded-full text-sm px-5 py-2.5 shadow-lg focus:outline-none focus:ring-2 focus:ring-electric-blue mr-4">
-              Join the Waitlist
-            </Link>
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              type="button"
-              className="inline-flex items-center p-2 text-midnight-blue rounded-lg lg:hidden hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-electric-blue"
-              aria-controls="mobile-menu-2"
-              aria-expanded={isMobileMenuOpen}
-            >
-              <span className="sr-only">Open main menu</span>
-              <svg className={`w-6 h-6 ${isMobileMenuOpen ? 'hidden' : 'block'}`} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"></path>
-              </svg>
-              <svg className={`w-6 h-6 ${isMobileMenuOpen ? 'block' : 'hidden'}`} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path>
-              </svg>
-            </button>
+          <div className="flex items-center lg:order-2">
+          <Link href="#waitlist" className="hidden lg:inline-block text-off-white bg-neon-purple hover:bg-electric-blue transition-colors duration-300 font-medium rounded-full text-sm px-5 py-2.5 mr-2 shadow-lg focus:outline-none focus:ring-2 focus:ring-electric-blue">
+            Join the Waitlist
+          </Link>
           </div>
+          <div className="hidden lg:flex items-center space-x-6">
+          <ul className="flex flex-col mt-4 font-medium lg:flex-row lg:space-x-8 lg:mt-0">
+            <li>
+              <Link href="#" className="block py-2 pr-4 pl-3 text-midnight-blue hover:text-electric-blue transition-colors duration-300 rounded lg:p-0 lg:text-lg lg:font-semibold">
+                Home
+              </Link>
+            </li>
+            <li>
+              <Link href="#features" className="block py-2 pr-4 pl-3 text-midnight-blue hover:text-electric-blue transition-colors duration-300 rounded lg:p-0 lg:text-lg lg:font-semibold">
+                Features
+              </Link>
+            </li>
+            <li>
+              <Link href="#contact" className="block py-2 pr-4 pl-3 text-midnight-blue hover:text-electric-blue transition-colors duration-300 rounded lg:p-0 lg:text-lg lg:font-semibold">
+                Contact Us
+              </Link>
+            </li>
+          </ul>
+          </div>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            type="button"
+            className="inline-flex items-center p-2 text-midnight-blue rounded-lg lg:hidden hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-electric-blue ml-2"
+            aria-controls="mobile-menu-2"
+            aria-expanded={isMobileMenuOpen}
+          >
+            <span className="sr-only">Open main menu</span>
+            <svg className={`w-6 h-6 ${isMobileMenuOpen ? 'hidden' : 'block'}`} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"></path>
+            </svg>
+            <svg className={`w-6 h-6 ${isMobileMenuOpen ? 'block' : 'hidden'}`} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path>
+            </svg>
+          </button>
         </div>
       </nav>
       <div className={`${isMobileMenuOpen ? 'translate-y-0 opacity-100 visible' : 'translate-y-[-10px] opacity-0 invisible'} fixed top-[60px] left-0 w-full bg-white shadow-xl transition-all duration-300 ease-in-out z-20 lg:hidden`} id="mobile-menu-2">
         <div className="max-w-screen-xl mx-auto px-4 py-6">
           <ul className="space-y-4 text-right">
             <li>
-              <Link href="#" className="inline-block text-lg font-semibold text-midnight-blue hover:text-electric-blue transition-colors duration-300">
+            <Link href="#features" className="inline-block text-lg font-semibold text-midnight-blue hover:text-electric-blue transition-colors duration-300">
                 Home
               </Link>
             </li>

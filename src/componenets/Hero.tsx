@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { useSpring, animated } from 'react-spring';
+import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
+import { useSpring as useReactSpring, animated } from 'react-spring';
 // Import other necessary libraries for animations and effects
 
 const Hero: React.FC = () => {
@@ -11,10 +11,16 @@ const Hero: React.FC = () => {
     offset: ["start start", "end start"]
   });
 
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
-  const textY = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
+  const smoothScrollYProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
 
-  const [{ glowStrength }, setGlowStrength] = useSpring(() => ({ glowStrength: 0 }));
+  const backgroundY = useTransform(smoothScrollYProgress, [0, 1], ['0%', '50%']);
+  const textY = useTransform(smoothScrollYProgress, [0, 1], ['0%', '100%']);
+
+  const [{ glowStrength }, setGlowStrength] = useReactSpring(() => ({ glowStrength: 0 }));
 
   useEffect(() => {
     // Initialize particle effects, mouse interaction effects, etc.
@@ -29,6 +35,32 @@ const Hero: React.FC = () => {
       {/* Animated background */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#2C3E50] to-[#8E44AD] opacity-10 animate-gradient-x"></div>
       
+      {/* Diagonal hexagon pattern with 3D glow */}
+      <div className="absolute inset-0 overflow-hidden">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+            <pattern id="hexagons" x="0" y="0" width="150" height="150" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+              <path d="M75,0 L150,43.3 L150,129.9 L75,173.2 L0,129.9 L0,43.3 Z" fill="none" stroke="rgba(52, 152, 219, 0.15)" strokeWidth="1" filter="url(#glow)">
+                <animate attributeName="stroke-width" values="1;2;1" dur="4s" repeatCount="indefinite" />
+              </path>
+            </pattern>
+            <radialGradient id="fade" cx="50%" cy="50%" r="70%" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="white" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="white" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <rect x="0" y="0" width="100%" height="100%" fill="url(#hexagons)" />
+          <rect x="0" y="0" width="100%" height="100%" fill="url(#fade)" />
+        </svg>
+      </div>
+
       {/* Geometric patterns */}
       <div className="absolute inset-0 opacity-20">
         {/* Add SVG patterns here */}

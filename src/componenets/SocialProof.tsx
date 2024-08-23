@@ -10,7 +10,7 @@ const SocialProof = () => {
             <span className="absolute bottom-0 right-0 transform translate-x-8 translate-y-8 text-6xl text-electric-blue opacity-50">
               &rdquo;
             </span>
-            <cite className="block mt-4 text-neon-purple text-lg">— Alex R., Junior at University XYZ</cite>
+            <cite className="block mt-4 text-neon-purple text-lg">— Alex R.</cite>
           </blockquote>
         </div>
       </section>
