@@ -63,7 +63,7 @@ const Pricing: React.FC = () => {
             Choose the Best Plan for Your Professor Insights
           </h2>
           <p className="mb-5 font-light text-gray-500 sm:text-xl dark:text-gray-400">
-            Explore our flexible pricing plans to enhance your academic experience. Whether you're a casual user or a dedicated researcher, we've got the right tools for you.
+            Explore our flexible pricing plans to enhance your academic experience. Whether you&apos;re a casual user or a dedicated researcher, we&apos;ve got the right tools for you.
           </p>
         </div>
         <div className="space-y-8 lg:grid lg:grid-cols-3 sm:gap-6 xl:gap-10 lg:space-y-0 pt-16">
