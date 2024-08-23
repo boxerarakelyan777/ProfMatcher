@@ -19,14 +19,15 @@ const Features: React.FC = () => {
       { threshold: 0.1 }
     );
 
-    featureRefs.current.forEach((ref) => {
+    const currentRefs = featureRefs.current;
+    currentRefs.forEach((ref) => {
       if (ref) {
         observer.observe(ref);
       }
     });
 
     return () => {
-      featureRefs.current.forEach((ref) => {
+      currentRefs.forEach((ref) => {
         if (ref) {
           observer.unobserve(ref);
         }
