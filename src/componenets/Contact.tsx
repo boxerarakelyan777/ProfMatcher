@@ -1,13 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSpring, animated } from 'react-spring';
 
 
 const ContactForm = () => {
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [glowProps, setGlowProps] = useSpring(() => ({
+    glowStrength: 0,
+    config: { duration: 200 }
+  }));
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // Handle form submission logic here
+  };
 
   return (
     <section className="bg-white dark:bg-gray-900">
@@ -16,7 +25,7 @@ const ContactForm = () => {
         <p className="mb-8 lg:mb-16 font-light text-center text-gray-500 dark:text-gray-400 sm:text-xl">
           Got a technical issue? Want to send feedback about a beta feature? Need details about our Business plan? Let us know.
         </p>
-        <form  className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
           <div>
             <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">Your email</label>
             <input 
@@ -53,12 +62,22 @@ const ContactForm = () => {
               required
             ></textarea>
           </div>
-          <button 
-            type="submit" 
-            className="py-3 px-5 text-sm font-medium text-center text-white rounded-lg bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-800 transition-colors duration-200 ease-in-out shadow-md"
-          >
-            Send message
-          </button>
+          <div>
+            <animated.button
+              type="submit"
+              onMouseEnter={() => setGlowProps({ glowStrength: 1 })}
+              onMouseLeave={() => setGlowProps({ glowStrength: 0 })}
+              style={{
+                background: 'linear-gradient(45deg, #3498DB, #8E44AD)',
+                boxShadow: glowProps.glowStrength.to(
+                  (s: number) => `0 0 ${s * 20}px ${s * 10}px rgba(52, 152, 219, ${s * 0.5})`
+                )
+              }}
+              className="w-full text-white font-bold py-4 px-8 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 backdrop-filter backdrop-blur-sm bg-opacity-30"
+            >
+              Send Message
+            </animated.button>
+          </div>
         </form>
       </div>
     </section>

@@ -2,3 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
+.bg-texture {
+  background-color: #f0f0f0;
+}
+
+.bg-gradient-text {
+  background: linear-gradient(45deg, #1A73E8, #00BCD4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glow-effect {
+  text-shadow: 0 0 10px rgba(26, 115, 232, 0.5);
+}
+
+.glassmorphism {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.cta-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-button::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.cta-button:hover::after {
+  opacity: 1;
+}
+
+
+/* Add some padding to sections for space and contrast */
+section {
+  padding: 60px 0;
+}
+
+/* Add subtle box shadows or borders for division */
+.section-divider {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0 auto;
+  max-width: 80%;
+  opacity: 0.6;
+}
+
+/* Background variations */
+.bg-variation {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.03));
+}
+
+/* Example for footer */
+footer {
+  padding: 40px 0;
+  border-top: 2px solid rgba(255, 255, 255, 0.15);
+}
