@@ -6,7 +6,7 @@ const SocialProof = () => {
             <span className="absolute top-0 left-0 transform -translate-x-8 -translate-y-8 text-6xl text-electric-blue opacity-50">
               &ldquo;
             </span>
-            "I can't wait to use ProfTracker! Joining the waitlist was easy, and I'm excited to see how this tool will help me find the best professors."
+            &ldquo;I can&apos;t wait to use ProfTracker! Joining the waitlist was easy, and I&apos;m excited to see how this tool will help me find the best professors.&rdquo;
             <span className="absolute bottom-0 right-0 transform translate-x-8 translate-y-8 text-6xl text-electric-blue opacity-50">
               &rdquo;
             </span>
@@ -18,4 +18,3 @@ const SocialProof = () => {
   };
   
   export default SocialProof;
-  
