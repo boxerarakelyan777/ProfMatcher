@@ -241,7 +241,7 @@ const Hero: React.FC = () => {
             ) : (
               <div className="text-center">
                 <p className="text-2xl font-semibold mb-4 text-[#2C3E50]">Welcome aboard, {name}!</p>
-                <p className="text-green-600 mb-6">You've successfully joined our exclusive waitlist.</p>
+                <p className="text-green-600 mb-6">You&apos;ve successfully joined our exclusive waitlist.</p>
                 <p className="text-sm text-[#2C3E50] mb-4">Help us revolutionize education:</p>
                 <div className="flex justify-center space-x-4">
                   <button className="bg-[#1da1f2] p-2 rounded-full hover:bg-[#1a91da] transition-colors">
