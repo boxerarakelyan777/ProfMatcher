@@ -120,7 +120,7 @@ const ContactForm = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full">
             <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Thank You!</h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">Your message has been sent successfully. We'll get back to you soon.</p>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">Your message has been sent successfully. We&apos;ll get back to you soon.</p>
             <div className="flex justify-between">
               <button
                 onClick={() => setShowSuccessModal(false)}
