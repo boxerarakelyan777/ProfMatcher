@@ -2,24 +2,59 @@
 
 import React, { useState } from 'react';
 import { useSpring, animated } from 'react-spring';
-
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 const ContactForm = () => {
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [glowProps, setGlowProps] = useSpring(() => ({
     glowStrength: 0,
     config: { duration: 200 }
   }));
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Handle form submission logic here
+    
+    try {
+      const docRef = await addDoc(collection(db, 'contacts'), {
+        email,
+        subject,
+        message,
+        timestamp: new Date(),
+      });
+      console.log('Document written with ID: ', docRef.id);
+      setShowSuccessModal(true);
+      
+      // Clear form
+      setEmail('');
+      setSubject('');
+      setMessage('');
+    } catch (e) {
+      console.error('Error adding document: ', e);
+      alert('There was an error sending your message. Please try again later.');
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Check out ProfTracker',
+        text: 'I just contacted ProfTracker. You should check them out!',
+        url: 'https://profmatcher.vercel.app/',
+      }).then(() => {
+        console.log('Thanks for sharing!');
+      }).catch(console.error);
+    } else {
+      // Fallback for browsers that don't support the Web Share API
+      alert('Sharing is not supported on this browser, but we appreciate your intention!');
+    }
   };
 
   return (
-    <section id="contact" className="bg-white dark:bg-gray-900">
+    <section id="contact" className="bg-white dark:bg-gray-900 relative">
       <div className="py-8 lg:py-16 px-4 mx-auto max-w-screen-md">
         <h2 className="mb-4 text-4xl tracking-tight font-extrabold text-center text-gray-900 dark:text-white">Contact Us</h2>
         <p className="mb-8 lg:mb-16 font-light text-center text-gray-500 dark:text-gray-400 sm:text-xl">
@@ -80,6 +115,29 @@ const ContactForm = () => {
           </div>
         </form>
       </div>
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Thank You!</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">Your message has been sent successfully. We'll get back to you soon.</p>
+            <div className="flex justify-between">
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={handleShare}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                Share
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
