@@ -177,9 +177,14 @@ const Hero: React.FC = () => {
               animate={{ opacity: 1, rotateY: 0 }}
               transition={{ duration: 1 }}
             >
-              {/* Add 3D app mockup here */}
+              {/* Add image from HeroSection folder in public */}
               <div className="bg-white rounded-lg shadow-xl p-4 backdrop-filter backdrop-blur-sm bg-opacity-30">
-                {/* Add mockup content with animations here */}
+                <img 
+                /* Add mockup content with animations here */
+                  src="/HeroSection/Hero.png" 
+                  alt="App Mockup" 
+                  className="w-full h-auto rounded-lg"
+                />
               </div>
             </motion.div>
           </div>
