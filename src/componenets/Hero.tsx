@@ -161,7 +161,7 @@ const Hero: React.FC = () => {
                 Join the Waitlist
               </animated.button>
               <a 
-                href="#learn-more" 
+                href="#pricing" 
                 className="inline-block bg-transparent border-2 border-[#3498DB] text-[#3498DB] hover:bg-[#3498DB] hover:text-white font-bold py-4 px-8 rounded-lg transition duration-300 ease-in-out"
               >
                 Learn More
