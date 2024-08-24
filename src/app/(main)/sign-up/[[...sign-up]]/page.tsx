@@ -1,7 +1,7 @@
 import React from 'react';
 import { SignUp } from "@clerk/nextjs";
-import Navbar from '../../../componenets/NavBar';
-import Footer from '../../../componenets/Footer';
+import Navbar from '../../../../componenets/NavBar';
+import Footer from '../../../../componenets/Footer';
 
 export default function Page() {
   return (
