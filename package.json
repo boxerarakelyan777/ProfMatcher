@@ -11,6 +11,9 @@
   "dependencies": {
     "@firebase/app": "^0.10.9",
     "@firebase/firestore": "^4.7.0",
+    "@langchain/community": "^0.2.31",
+    "@langchain/groq": "^0.0.17",
+    "@pinecone-database/pinecone": "^3.0.2",
     "@react-three/drei": "^9.111.2",
     "@react-three/fiber": "^8.17.5",
     "firebase": "^10.13.0",
