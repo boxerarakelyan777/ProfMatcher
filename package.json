@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/clerk-js": "^5.15.1",
+    "@clerk/nextjs": "^5.3.3",
     "@firebase/app": "^0.10.9",
     "@firebase/firestore": "^4.7.0",
     "@langchain/community": "^0.2.31",
