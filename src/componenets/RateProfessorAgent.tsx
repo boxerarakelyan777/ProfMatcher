@@ -46,7 +46,11 @@ export default function RateProfessorAgent() {
       })
       result += text
       const nextChunk = await reader?.read()
-      return processText(nextChunk)
+      if (nextChunk) {
+        return processText(nextChunk)
+      } else {
+        return result
+      }
     }
 
     if (reader) {
