@@ -19,33 +19,40 @@ export default function RateProfessorAgent() {
       {role: 'assistant', content: ''},
     ])
 
-    const response = fetch('/api/chat', {
+    const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify([...messages, {role: 'user', content: message}]),
-    }).then(async (res) => {
-      const reader = res.body?.getReader()
-      const decoder = new TextDecoder()
-      let result = ''
+    });
 
-      return reader?.read().then(function processText({done, value}) {
-        if (done) {
-          return result
-        }
-        const text = decoder.decode(value || new Uint8Array(), {stream: true})
-        setMessages((messages) => {
-          let lastMessage = messages[messages.length - 1]
-          let otherMessages = messages.slice(0, messages.length - 1)
-          return [
-            ...otherMessages,
-            {...lastMessage, content: lastMessage.content + text},
-          ]
-        })
-        return reader.read().then(processText)
+    const reader = response.body?.getReader()
+    const decoder = new TextDecoder()
+    let result = ''
+
+    const processText = async function({ done, value }: ReadableStreamReadResult<Uint8Array>): Promise<string> {
+      if (done) {
+        return result
+      }
+      const text = decoder.decode(value || new Uint8Array(), {stream: true})
+      setMessages((messages) => {
+        let lastMessage = messages[messages.length - 1]
+        let otherMessages = messages.slice(0, messages.length - 1)
+        return [
+          ...otherMessages,
+          {...lastMessage, content: lastMessage.content + text},
+        ]
       })
-    })
+      result += text
+      const nextChunk = await reader?.read()
+      return processText(nextChunk)
+    }
+
+    if (reader) {
+      const initialChunk = await reader.read()
+      await processText(initialChunk)
+    }
   }
 
   return (
