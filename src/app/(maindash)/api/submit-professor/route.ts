@@ -27,12 +27,20 @@ export async function POST(req: Request) {
       message: 'Professor data successfully scraped and stored',
       professorData: processedData
     }, { status: 200 });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Detailed error in processing professor submission:', error);
-    return NextResponse.json({ 
-      error: 'Failed to process professor submission', 
-      details: error.message,
-      stack: error.stack
-    }, { status: 500 });
+    
+    if (error instanceof Error) {
+      return NextResponse.json({ 
+        error: 'Failed to process professor submission', 
+        details: error.message,
+        stack: error.stack
+      }, { status: 500 });
+    } else {
+      return NextResponse.json({ 
+        error: 'Failed to process professor submission', 
+        details: 'An unknown error occurred'
+      }, { status: 500 });
+    }
   }
 }
