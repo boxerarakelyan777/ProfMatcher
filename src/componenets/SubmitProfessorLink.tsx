@@ -41,9 +41,13 @@ const SubmitProfessorLink: React.FC = () => {
       } else {
         throw new Error(data.error || 'Failed to submit professor link');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error submitting professor link:', error);
-      setMessage(`Failed to submit professor link: ${error.message}`);
+      if (error instanceof Error) {
+        setMessage(`Failed to submit professor link: ${error.message}`);
+      } else {
+        setMessage('Failed to submit professor link: An unknown error occurred');
+      }
     } finally {
       setIsLoading(false);
     }
