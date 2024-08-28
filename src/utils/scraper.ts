@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import * as cheerio from 'cheerio';
 
 interface ProfessorData {
@@ -60,12 +60,25 @@ export async function scrapeProfessorPage(url: string): Promise<ProfessorData> {
     }).get();
 
     return { name, department, institution, overallRating, reviews };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Detailed error in scraping professor page:', error);
-    if (error.response) {
-      console.error('Response status:', error.response.status);
-      console.error('Response headers:', error.response.headers);
+
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+        console.error('Response data:', error.response.data);
+      } else if (error.request) {
+        console.error('Request:', error.request);
+      } else {
+        console.error('Error message:', error.message);
+      }
+    } else if (error instanceof Error) {
+      console.error('Error message:', error.message);
+    } else {
+      console.error('Unknown error occurred');
     }
-    throw new Error(`Failed to scrape professor page: ${error.message}`);
+
+    throw new Error('Failed to scrape professor page');
   }
 }
