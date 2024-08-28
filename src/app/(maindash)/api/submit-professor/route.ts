@@ -14,12 +14,18 @@ export async function POST(req: Request) {
     const professorData = await scrapeProfessorPage(url);
     console.log('Scraped professor data:', professorData);
 
+    // Ensure overallRating is a number
+    const processedData = {
+      ...professorData,
+      overallRating: professorData.overallRating ?? 0 // Use 0 if null
+    };
+
     console.log('Storing professor data in Pinecone');
-    await storeProfessorData(professorData);
+    await storeProfessorData(processedData);
 
     return NextResponse.json({ 
       message: 'Professor data successfully scraped and stored',
-      professorData: professorData
+      professorData: processedData
     }, { status: 200 });
   } catch (error) {
     console.error('Detailed error in processing professor submission:', error);
