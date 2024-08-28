@@ -4,6 +4,9 @@ interface SearchCriteria {
   teacherName: string;
   schoolName: string;
   department: string;
+  minRating: number;
+  courseLevel: string;
+  teachingStyle: string;
 }
 
 const AdvancedSearch: React.FC = () => {
@@ -11,22 +14,29 @@ const AdvancedSearch: React.FC = () => {
     teacherName: '',
     schoolName: '',
     department: '',
+    minRating: 0,
+    courseLevel: '',
+    teachingStyle: '',
   });
 
   const [results, setResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setCriteria(prev => ({ ...prev, [name]: value }));
+    setCriteria(prev => ({ ...prev, [name]: name === 'minRating' ? parseFloat(value) : value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch('/api/rmp-search', {
+      console.log('Submitting search criteria:', criteria);
+
+      const response = await fetch('/api/advanced-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(criteria),
@@ -37,63 +47,105 @@ const AdvancedSearch: React.FC = () => {
       }
 
       const data = await response.json();
+      console.log('Received search results:', data);
+
       setResults(data.results);
     } catch (error) {
       console.error('Search error:', error);
-      // Handle error (e.g., show error message to user)
+      setError('Failed to perform search. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-8 p-6 bg-white shadow-md rounded-lg">
-      <h2 className="text-2xl font-bold mb-6 text-center">Professor Search</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          name="teacherName"
-          value={criteria.teacherName}
-          onChange={handleInputChange}
-          placeholder="Professor Name"
-          className="w-full px-4 py-2 border rounded-md"
-        />
-        <input
-          type="text"
-          name="schoolName"
-          value={criteria.schoolName}
-          onChange={handleInputChange}
-          placeholder="School Name"
-          className="w-full px-4 py-2 border rounded-md"
-        />
-        <input
-          type="text"
-          name="department"
-          value={criteria.department}
-          onChange={handleInputChange}
-          placeholder="Department"
-          className="w-full px-4 py-2 border rounded-md"
-        />
+    <div className="bg-white shadow-lg rounded-lg p-8 max-w-4xl mx-auto">
+      <h2 className="text-4xl font-extrabold text-center mb-8 text-midnight-blue tracking-tight">
+        Advanced Professor Search
+      </h2>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <input
+            type="text"
+            name="teacherName"
+            value={criteria.teacherName}
+            onChange={handleInputChange}
+            placeholder="Professor Name"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <input
+            type="text"
+            name="schoolName"
+            value={criteria.schoolName}
+            onChange={handleInputChange}
+            placeholder="School Name"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <input
+            type="text"
+            name="department"
+            value={criteria.department}
+            onChange={handleInputChange}
+            placeholder="Department"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <input
+            type="number"
+            name="minRating"
+            value={criteria.minRating}
+            onChange={handleInputChange}
+            min="0"
+            max="5"
+            step="0.1"
+            placeholder="Minimum Rating"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <select
+            name="courseLevel"
+            value={criteria.courseLevel}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Select Course Level</option>
+            <option value="introductory">Introductory</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+          <select
+            name="teachingStyle"
+            value={criteria.teachingStyle}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Select Teaching Style</option>
+            <option value="lecture">Lecture-based</option>
+            <option value="interactive">Interactive</option>
+            <option value="hands-on">Hands-on</option>
+          </select>
+        </div>
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600 disabled:opacity-50"
+          className="w-full px-6 py-3 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
         >
           {isLoading ? 'Searching...' : 'Search'}
         </button>
       </form>
+      {error && <p className="mt-4 text-red-500 text-center">{error}</p>}
       {results.length > 0 && (
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold mb-4">Search Results</h3>
-          <ul className="space-y-4">
+        <div className="mt-12">
+          <h3 className="text-2xl font-bold mb-6 text-midnight-blue">Recommended Professors</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {results.map((professor, index) => (
-              <li key={index} className="border-b pb-4 last:border-b-0">
-                <h4 className="font-semibold">{professor.name}</h4>
-                <p>{professor.department} - {professor.school}</p>
-                <p>Rating: {professor.rating}</p>
-              </li>
+              <div key={index} className="bg-white shadow-md rounded-lg p-6 hover:shadow-lg transition duration-300 ease-in-out">
+                <h4 className="font-semibold text-xl mb-2 text-midnight-blue">{professor.name}</h4>
+                <p className="text-gray-600 mb-1">{professor.department} - {professor.school}</p>
+                <p className="text-gray-600 mb-1">Rating: <span className="font-semibold text-blue-600">{professor.rating}</span></p>
+                <p className="text-gray-600 mb-1">Teaching Style: {professor.teachingStyle}</p>
+                <p className="text-gray-600">Course Level: {professor.courseLevel}</p>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
     </div>
