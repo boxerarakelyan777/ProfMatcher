@@ -62,8 +62,12 @@ export async function storeProfessorData(professorData: ProfessorData) {
     }
 
     console.log('Professor data and reviews stored successfully');
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Detailed error in storing professor data:', error);
-    throw new Error(`Failed to store professor data: ${error.message}`);
+    if (error instanceof Error) {
+      throw new Error(`Failed to store professor data: ${error.message}`);
+    } else {
+      throw new Error('Failed to store professor data: An unknown error occurred');
+    }
   }
 }
