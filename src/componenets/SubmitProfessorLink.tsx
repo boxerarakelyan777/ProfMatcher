@@ -50,8 +50,10 @@ const SubmitProfessorLink: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-8 p-6 bg-white shadow-md rounded-lg">
-      <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">Submit Professor Link</h1>
+    <div className="bg-white shadow-lg rounded-lg p-8 max-w-2xl mx-auto">
+      <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-[#3498DB] to-[#8E44AD] text-transparent bg-clip-text">
+        Submit Professor Link
+      </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="url"
@@ -59,12 +61,12 @@ const SubmitProfessorLink: React.FC = () => {
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Enter Rate My Professor URL"
           required
-          className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          className="w-full px-6 py-3 text-white bg-gradient-to-r from-[#3498DB] to-[#8E44AD] rounded-lg hover:opacity-90 transition duration-300 transform hover:scale-105 disabled:opacity-50"
         >
           {isLoading ? 'Submitting...' : 'Submit'}
         </button>
