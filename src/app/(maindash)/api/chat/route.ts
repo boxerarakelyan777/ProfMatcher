@@ -6,6 +6,9 @@ import {
   HuggingFaceInferenceEmbeddingsParams,
 } from "@langchain/community/embeddings/hf";
 import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
+import Groq from "groq-sdk";
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const llm = new ChatGroq({
   model: "mixtral-8x7b-32768",
@@ -49,8 +52,6 @@ export async function POST(req: Request) {
 
   const index = pc.Index("rag").namespace("nsl");
 
-  const groq = new ChatGroq();
-
   const text = data[data.length - 1].content;
 
   const hfie_params: HuggingFaceInferenceEmbeddingsParams = {
@@ -85,20 +86,30 @@ export async function POST(req: Request) {
   const lastMessageContent = lastMessage.content + result_string;
   const lastDataWithoutLastMessage = data.slice(0, data.length - 1);
 
-  const messages: BaseLanguageModelInput = [
+  /* const messages: BaseLanguageModelInput = [
     { type: "system", content: systemPrompt },
     ...lastDataWithoutLastMessage,
-    { type: "user", content: lastMessage },
+    { type: "user", content: lastMessageContent },
   ];
 
-  const completion = await llm.stream(messages);
+  const completion = await llm.stream(messages); */
+
+  const completion = await groq.chat.completions.create({
+    messages: [
+      { role: "system", content: systemPrompt },
+      ...lastDataWithoutLastMessage,
+      { role: "user", content: lastMessageContent },
+    ],
+    model: "llama3-8b-8192",
+    stream: true,
+  });
 
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
       try {
         for await (const chunk of completion) {
-          const content = chunk.content;
+          const content = chunk.choices[0]?.delta?.content;
           if (content) {
             const text = encoder.encode(content as string);
             controller.enqueue(text);
