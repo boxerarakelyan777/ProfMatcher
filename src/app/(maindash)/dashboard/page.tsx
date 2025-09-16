@@ -40,7 +40,10 @@ export default function Dashboard() {
                 : 'bg-white text-[#2C3E50] hover:bg-gray-100'
             }`}
           >
-            Level {level}
+            {level === 1 && 'Chat'}
+            {level === 2 && 'Link Search'}
+            {level === 3 && 'Advance Search'}
+            {level === 4 && 'Coming Soon'}
           </button>
         ))}
       </div>

@@ -1,127 +1,202 @@
+// /src/app/(maindash)/api/chat/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { Pinecone, QueryOptions } from "@pinecone-database/pinecone";
-import { ChatGroq } from "@langchain/groq";
 import {
   HuggingFaceInferenceEmbeddings,
   HuggingFaceInferenceEmbeddingsParams,
 } from "@langchain/community/embeddings/hf";
-import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
 import Groq from "groq-sdk";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const llm = new ChatGroq({
-  model: "mixtral-8x7b-32768",
-  temperature: 0,
-  // other params...
-});
+function looksVague(s: string) {
+  if (!s) return true;
+  const q = s.toLowerCase();
+  const hasCourse = /\b([a-z]{2,5})\s*\d{2,4}\b/i.test(q);
+  const hasUniversity =
+    /\b(university|college|institute|polytechnic|state|uw|ucla|asu|sfu|ubc|ualberta|toronto)\b/i.test(
+      q
+    );
+  const hasProfessor = /\bprof|professor|instructor|lecturer\b/i.test(q);
+  return s.trim().length < 12 && !(hasCourse || hasUniversity || hasProfessor);
+}
 
-const systemPrompt = `
+function streamText(text: string) {
+  return new ReadableStream({
+    start(controller) {
+      const enc = new TextEncoder();
+      controller.enqueue(enc.encode(text));
+      controller.close();
+    },
+  });
+}
 
-**Prompt:**
-
-**Task:**
-
-* **Identify:** The user's query or request related to professors at a specific university.
-* **Search:** Retrieve relevant information from a pre-defined knowledge base (e.g., RateMyProfessor database, academic department websites) using RAG.
-* **Rank:** Based on the search results, provide the top 3 professors who best match the user's query.
-* **Provide:** A concise and informative response that includes the professors' names, departments, and a brief overview of their teaching styles or areas of expertise.
-
-**Example User Query:**
-* "Who are the best professors for CS 101 at the University of Alberta?"
-
-**Expected Response:**
-* "Based on your query, here are the top 3 professors for CS 101 at the University of Alberta:
-    * Professor A: Known for their engaging lectures and clear explanations.
-    * Professor B: Renowned for their hands-on approach and helpful office hours.
-    * Professor C: Highly rated for their challenging assignments and valuable feedback."
-
-**Additional Considerations:**
-
-* **Contextual Understanding:** Consider the user's location and the specific university they are interested in.
-* **Customization:** Allow for customization of the response, such as including additional criteria (e.g., average rating, student satisfaction) or limiting the results to professors with specific teaching styles or research interests.
-* **Data Privacy:** Ensure that the response is compliant with data privacy regulations and avoids sharing personally identifiable information.
-* **RAG Effectiveness:** Continuously evaluate the effectiveness of the RAG model and refine the knowledge base to improve the accuracy and relevance of the responses.
+const SYSTEM_PROMPT = `
+You are ProfTracker, an assistant that recommends professors using ONLY the provided CONTEXT.
+Rules:
+- Do NOT mention databases, vectors, RAG, or data sources.
+- Do NOT use brand names like "RateMyProfessor".
+- NEVER invent names, courses, or ratings that are not present in CONTEXT.
+- If CONTEXT is insufficient, ask 2–4 precise follow-ups (university, course, term, preferences like "clear grading").
+- If sufficient, return up to 3 professors as:
+  1) Name — Dept/Course — 1–2 sentence strengths (optionally rating/sentiment if present)
+Be concise and helpful.
 `;
 
 export async function POST(req: Request) {
-  const data = await req.json();
-  const pc = new Pinecone({
-    apiKey: process.env.PINECONE_API_KEY || "",
-  });
+  try {
+    const data = await req.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      return NextResponse.json({ error: "No messages provided" }, { status: 400 });
+    }
 
-  const index = pc.Index("rag").namespace("nsl");
+    // Use only the last user message
+    const lastUser = [...data].reverse().find((m) => m?.role === "user");
+    const userText: string =
+      typeof lastUser?.content === "string" ? lastUser.content : "";
 
-  const text = data[data.length - 1].content;
+    if (looksVague(userText)) {
+      const clarifier =
+        `To recommend professors, please include:\n` +
+        `• University/college\n` +
+        `• Course or subject (e.g., "CS 101")\n` +
+        `• What you value (clear grading, engaging lectures, lighter workload, etc.)\n\n` +
+        `Examples:\n` +
+        `• "Best professors for CS 101 at University of Alberta who explain concepts clearly"\n` +
+        `• "Top instructors for ECON 201 at UW with fair grading and helpful office hours"`;
+      return new NextResponse(streamText(clarifier), {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache",
+        },
+      });
+    }
 
-  const hfie_params: HuggingFaceInferenceEmbeddingsParams = {
-    apiKey: process.env.HUGGINGFACEHUB_API_TOKEN,
-  };
+    // 1) Embed
+    const hfParams: HuggingFaceInferenceEmbeddingsParams = {
+      apiKey: process.env.HUGGINGFACEHUB_API_TOKEN,
+    };
+    const embedder = new HuggingFaceInferenceEmbeddings(hfParams);
+    const embedding = await embedder.embedQuery(userText);
 
-  const hfembeddingmodel = new HuggingFaceInferenceEmbeddings(hfie_params);
+    // 2) Pinecone query
+    const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY || "" });
+    const index = pc.Index(process.env.PINECONE_INDEX ?? "rag").namespace(
+      process.env.PINECONE_NAMESPACE ?? "nsl"
+    );
 
-  const embedding = await hfembeddingmodel.embedQuery(text);
+    const queryOptions: QueryOptions = {
+      topK: 6,
+      includeMetadata: true,
+      vector: embedding,
+    };
+    const results = await index.query(queryOptions);
 
-  const index_query_optins: QueryOptions = {
-    topK: 3,
-    includeMetadata: true,
-    vector: embedding,
-  };
+    // 3) Build context
+    const items = (results.matches ?? []).map((m) => {
+      const md = (m.metadata || {}) as Record<string, any>;
+      const name = (md.name ?? md.professor ?? "").toString().trim();
+      return {
+        id: m.id,
+        name,
+        subject: (md.subject ?? md.course ?? md.department ?? "").toString().trim(),
+        stars: (md.stars ?? md.rating ?? "").toString().trim(),
+        sentiment: (md.sentiment ?? "").toString().trim(),
+        review: (md.review ?? md.snippet ?? "").toString().trim(),
+      };
+    });
 
-  const results = index.query(index_query_optins);
+    const usable = items.filter(
+      (i) => i.name && i.name.toLowerCase() !== "unknown"
+    );
 
-  let result_string =
-    "\n\nReturned results from vector db (done automatically): ";
-  (await results).matches.forEach((match) => {
-    result_string += `\n
-    Professor:${match.id}
-    Review:${match.metadata?.review}
-    Subject:${match.metadata?.subject}
-    Stars:${match.metadata?.stars}
-    \n\n
-    `;
-  });
+    const CONTEXT =
+      usable.length === 0
+        ? ""
+        : usable
+            .map((c, i) => {
+              const parts = [
+                `#${i + 1}`,
+                `Name: ${c.name}`,
+                c.subject && `Course/Dept: ${c.subject}`,
+                c.stars && `Rating: ${c.stars}`,
+                c.sentiment && `Sentiment: ${c.sentiment}`,
+                c.review && `Snippet: ${c.review}`,
+              ].filter(Boolean);
+              return parts.join(" | ");
+            })
+            .join("\n");
 
-  const lastMessage = data[data.length - 1];
-  const lastMessageContent = lastMessage.content + result_string;
-  const lastDataWithoutLastMessage = data.slice(0, data.length - 1);
+    if (!CONTEXT) {
+      const clarifier =
+        `I don’t have enough matches yet.\n` +
+        `Please include:\n` +
+        `• University name\n` +
+        `• Course code/subject (e.g., "CS 101")\n` +
+        `• Preferences (clear grading, engaging lectures, lighter workload, etc.)\n\n` +
+        `Examples:\n` +
+        `• "Best professors for CS 101 at University of Alberta who explain concepts clearly"\n` +
+        `• "Looking for ECON 201 at UW — fair grading and helpful office hours"`;
+      return new NextResponse(streamText(clarifier), {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache",
+        },
+      });
+    }
 
-  /* const messages: BaseLanguageModelInput = [
-    { type: "system", content: systemPrompt },
-    ...lastDataWithoutLastMessage,
-    { type: "user", content: lastMessageContent },
-  ];
+    // 4) LLM
+    const messages = [
+      { role: "system" as const, content: SYSTEM_PROMPT },
+      {
+        role: "user" as const,
+        content:
+          `CONTEXT:\n${CONTEXT}\n\n` +
+          `USER QUESTION:\n${userText}\n\n` +
+          `INSTRUCTIONS:\n` +
+          `- Recommend up to 3 professors found in CONTEXT only.\n` +
+          `- Format: 1) Name — Dept/Course — brief strengths (optionally rating/sentiment)\n` +
+          `- If unclear, ask 2–4 targeted follow-ups.\n` +
+          `- Do NOT mention databases, brand names, or access limitations.\n` +
+          `- Do NOT invent any new names/details.`,
+      },
+    ];
 
-  const completion = await llm.stream(messages); */
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      temperature: 0,
+      stream: true,
+      messages,
+    });
 
-  const completion = await groq.chat.completions.create({
-    messages: [
-      { role: "system", content: systemPrompt },
-      ...lastDataWithoutLastMessage,
-      { role: "user", content: lastMessageContent },
-    ],
-    model: "llama3-8b-8192",
-    stream: true,
-  });
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder();
-      try {
-        for await (const chunk of completion) {
-          const content = chunk.choices[0]?.delta?.content;
-          if (content) {
-            const text = encoder.encode(content as string);
-            controller.enqueue(text);
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        try {
+          for await (const chunk of completion) {
+            const content = chunk.choices?.[0]?.delta?.content;
+            if (content) controller.enqueue(encoder.encode(content));
           }
+        } catch (err) {
+          controller.error(err);
+        } finally {
+          controller.close();
         }
-      } catch (err) {
-        controller.error(err);
-      } finally {
-        controller.close();
-      }
-    },
-  });
+      },
+    });
 
-  return new NextResponse(stream);
+    return new NextResponse(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache",
+      },
+    });
+  } catch (err: any) {
+    console.error("[/api/chat] Error:", err);
+    const msg = err?.message || err?.error?.error?.message || "Unexpected error";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

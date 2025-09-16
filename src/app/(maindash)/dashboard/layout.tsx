@@ -23,7 +23,7 @@ export default function DashboardLayout({
         <body className={`${inter.className} bg-gradient-to-b from-[#F2F4F6] to-white min-h-screen`}>
           <div className="absolute inset-0 bg-gradient-to-br from-[#2C3E50] to-[#8E44AD] opacity-10 animate-gradient-x"></div>
           <header>
-            <Navbar />
+            {/* <Navbar /> */}
           </header>
           <main className="relative z-10 container mx-auto px-4 py-24"> {/* Increased top padding */}
             <h1 className="text-4xl font-extrabold text-center mb-12 bg-gradient-to-r from-[#8E44AD] to-[#3498DB] text-transparent bg-clip-text">

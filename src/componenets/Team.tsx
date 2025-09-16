@@ -70,8 +70,8 @@ const Team: React.FC = () => {
           >
             <TeamMember
               name="Rudik Arakelyan"
-              title="Co-founder & Full Stack Web Developer"
-              description="Rudik is a co-founder and full stack web developer of the platform."
+              title="CEO/Co-founder & Head of Full Stack Software Engineer"
+              description="Rudik is a CEO/co-founder and is Lead Full Stack Software Engineer of the platform."
               imgSrc="/teamMembers/Rudik.JPG"
               linkedIn="https://www.linkedin.com/in/rudik-arakelyan/"
               github="https://github.com/boxerarakelyan777"
