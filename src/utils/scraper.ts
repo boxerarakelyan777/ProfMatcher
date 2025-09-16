@@ -1,84 +1,93 @@
-import axios, { AxiosError } from 'axios';
-import * as cheerio from 'cheerio';
+// src/utils/scraper.ts
+import axios from "axios";
+import * as cheerio from "cheerio";
 
-interface ProfessorData {
+const UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36";
+
+export interface ProfessorData {
   name: string;
   department: string;
   institution: string;
   overallRating: number | null;
-  reviews: {
-    text: string;
-    rating: number | null;
-    date: string;
-  }[];
+  reviews: { text: string; rating: number | null; date: string }[];
+}
+
+async function fetchHtml(url: string, tries = 3): Promise<string> {
+  let last: any;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await axios.get(url, {
+        headers: { "User-Agent": UA, Accept: "text/html,*/*" },
+        timeout: 15000,
+        validateStatus: (s) => s >= 200 && s < 400,
+      });
+      if (typeof res.data !== "string") throw new Error("Unexpected response");
+      return res.data as string;
+    } catch (e) {
+      last = e;
+      await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+    }
+  }
+  throw last;
 }
 
 export async function scrapeProfessorPage(url: string): Promise<ProfessorData> {
-  try {
-    console.log('Fetching page:', url);
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    });
+  const html = await fetchHtml(url);
+  const $ = cheerio.load(html);
 
-    console.log('Response status:', response.status);
-    console.log('Response data type:', typeof response.data);
-    console.log('Response data length:', response.data.length);
+  const name =
+    $(".NameTitle__Name-sc-19mggdt-0, [data-testid='professor-name']").first().text().trim() ||
+    $("h1, h2").first().text().trim() ||
+    "N/A";
 
-    if (typeof response.data !== 'string') {
-      throw new Error('Unexpected response data type');
-    }
+  // Some pages put dept + school together; split if comma-separated
+  const titleBlock =
+    $(".NameTitle__Title-sc-19mggdt-1, [data-testid='professor-school']").first().text().trim();
 
-    const $ = cheerio.load(response.data);
-
-    console.log('Cheerio loaded successfully');
-
-    const name = $('.NameTitle__Name-sc-19mggdt-0').text().trim() || 'N/A';
-    console.log('Scraped name:', name);
-
-    const department = $('.NameTitle__Title-sc-19mggdt-1').text().trim() || 'N/A';
-    console.log('Scraped department:', department);
-
-    const institution = $('.NameTitle__Title-sc-19mggdt-1').next().text().trim() || 'N/A';
-    console.log('Scraped institution:', institution);
-
-    const overallRatingText = $('.RatingValue__Numerator-qw8sqy-2').text().trim();
-    const overallRating = overallRatingText ? parseFloat(overallRatingText) : null;
-    console.log('Scraped overall rating:', overallRating);
-
-    const reviews = $('.Rating__RatingBody-sc-1rhvpxz-0').map((_, el) => {
-      const $review = $(el);
-      const ratingText = $review.find('.RatingHeader__RatingNumber-sc-1dlkqw1-1').text().trim();
-      const review = {
-        text: $review.find('.Comments__StyledComments-dzzyvm-0').text().trim() || 'N/A',
-        rating: ratingText ? parseFloat(ratingText) : null,
-        date: $review.find('.TimeStamp__StyledTimeStamp-sc-9q2r30-0').text().trim() || 'N/A',
-      };
-      console.log('Scraped review:', review);
-      return review;
-    }).get();
-
-    return { name, department, institution, overallRating, reviews };
-  } catch (error: unknown) {
-    console.error('Detailed error in scraping professor page:', error);
-
-    if (axios.isAxiosError(error)) {
-      if (error.response) {
-        console.error('Response status:', error.response.status);
-        console.error('Response headers:', error.response.headers);
-        console.error('Response data:', error.response.data);
-      } else if (error.request) {
-        console.error('Request:', error.request);
-      } else {
-        console.error('Error message:', error.message);
-      }
-    } else if (error instanceof Error) {
-      console.error('Error message:', error.message);
-    } else {
-      console.error('Unknown error occurred');
-    }
-
-    throw new Error('Failed to scrape professor page');
+  let department = "N/A";
+  let institution = "N/A";
+  if (titleBlock && titleBlock.includes("at")) {
+    const [deptPart, schoolPart] = titleBlock.split("at").map((s) => s.trim());
+    department = deptPart || "N/A";
+    institution = schoolPart || "N/A";
+  } else if (titleBlock && titleBlock.includes(",")) {
+    const [deptPart, schoolPart] = titleBlock.split(",").map((s) => s.trim());
+    department = deptPart || "N/A";
+    institution = schoolPart || "N/A";
+  } else {
+    department =
+      $(".Department__StyledDepartment-sc-1v5glsi-0").first().text().trim() || "N/A";
+    institution =
+      $("[data-testid='school-name']").first().text().trim() ||
+      $(".School__StyledSchool").first().text().trim() ||
+      "N/A";
   }
+
+  const ratingText =
+    $(".RatingValue__Numerator-qw8sqy-2, [data-testid='rating-value']")
+      .first()
+      .text()
+      .trim() || "";
+  const overallRating = ratingText ? parseFloat(ratingText) : null;
+
+  const reviews = [] as ProfessorData["reviews"];
+  $(
+    ".Rating__RatingBody-sc-1rhvpxz-0, [data-testid='rating-body'], .Rating__StyledRating"
+  ).each((_, el) => {
+    const $r = $(el);
+    const text =
+      $r.find(".Comments__StyledComments-dzzyvm-0, [data-testid='comment']").text().trim() || "N/A";
+    const rt =
+      $r
+        .find(".RatingHeader__RatingNumber-sc-1dlkqw1-1, [data-testid='rating-number']")
+        .text()
+        .trim() || "";
+    const rating = rt ? parseFloat(rt) : null;
+    const date =
+      $r.find(".TimeStamp__StyledTimeStamp-sc-9q2r30-0, time").first().text().trim() || "N/A";
+    if (text) reviews.push({ text, rating, date });
+  });
+
+  return { name, department, institution, overallRating, reviews };
 }

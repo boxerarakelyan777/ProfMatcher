@@ -1,73 +1,104 @@
-import { Pinecone } from '@pinecone-database/pinecone';
-import { HuggingFaceInferenceEmbeddings } from '@langchain/community/embeddings/hf';
+// src/utils/pinecone.ts
+import { Pinecone } from "@pinecone-database/pinecone";
+import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 
-interface ProfessorData {
+export interface ProfessorData {
   name: string;
   department: string;
   institution: string;
-  overallRating: number;
-  reviews: {
-    text: string;
-    rating: number | null;
-    date: string;
-  }[];
+  overallRating: number; // normalized to number in submit route
+  reviews: { text: string; rating: number | null; date: string }[];
 }
+
+const INDEX = process.env.PINECONE_INDEX || "rag";
+const NAMESPACE = process.env.PINECONE_NAMESPACE || "nsl";
+
+function slugify(s: string) {
+  return s.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+}
+
+// Metadata shapes (union) so review nodes can have professorName, text, etc.
+type ProfessorMeta = {
+  type: "professor";
+  name: string;
+  department: string;
+  institution: string;
+  overallRating: string; // store as string in metadata
+};
+
+type ReviewMeta = {
+  type: "review";
+  professorName: string;
+  text: string;
+  rating: string; // "N/A" or "4.5"
+  date: string;
+};
+
+type UpsertVector = {
+  id: string;
+  values: number[];
+  metadata: ProfessorMeta | ReviewMeta;
+};
 
 export async function storeProfessorData(professorData: ProfessorData) {
   try {
-    const pc = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY || "",
+    const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY || "" });
+    const index = pc.Index(INDEX).namespace(NAMESPACE);
+
+    const embedder = new HuggingFaceInferenceEmbeddings({
+      apiKey: process.env.HUGGINGFACEHUB_API_TOKEN,
+      model: "sentence-transformers/all-MiniLM-L6-v2",
     });
 
-    const index = pc.Index("rag").namespace("nsl");
+    const profId = `professor_${slugify(professorData.name)}_${slugify(
+      professorData.institution
+    )}`;
 
-    const hfie_params = {
-      apiKey: process.env.HUGGINGFACEHUB_API_TOKEN,
-    };
-
-    const hfembeddingmodel = new HuggingFaceInferenceEmbeddings(hfie_params);
-
-    // Create an embedding for the professor's overall data
-    const professorEmbedding = await hfembeddingmodel.embedQuery(
+    // --- Overall professor node ---
+    const profEmbedding = await embedder.embedQuery(
       `${professorData.name} ${professorData.department} ${professorData.institution}`
     );
 
-    // Store the professor's overall data
-    await index.upsert([{
-      id: `professor_${professorData.name.replace(/\s+/g, '_').toLowerCase()}`,
-      values: professorEmbedding,
-      metadata: {
-        type: 'professor',
-        name: professorData.name,
-        department: professorData.department,
-        institution: professorData.institution,
-        overallRating: professorData.overallRating,
+    const upserts: UpsertVector[] = [
+      {
+        id: profId,
+        values: profEmbedding,
+        metadata: {
+          type: "professor",
+          name: professorData.name,
+          department: professorData.department,
+          institution: professorData.institution,
+          overallRating: String(professorData.overallRating),
+        },
       },
-    }]);
+    ];
 
-    // Store each review separately
-    for (const review of professorData.reviews) {
-      const reviewEmbedding = await hfembeddingmodel.embedQuery(review.text);
-      await index.upsert([{
-        id: `review_${professorData.name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}`,
+    // --- Reviews as separate nodes (deterministic-ish suffix) ---
+    for (const r of professorData.reviews) {
+      const reviewEmbedding = await embedder.embedQuery(r.text);
+      const key = slugify(`${r.date}_${r.text.slice(0, 32)}`);
+
+      upserts.push({
+        id: `${profId}_review_${key}`,
         values: reviewEmbedding,
         metadata: {
-          type: 'review',
+          type: "review",
           professorName: professorData.name,
-          text: review.text,
-          rating: review.rating !== null ? review.rating : 'N/A',
-          date: review.date,
+          text: r.text,
+          rating: r.rating === null ? "N/A" : String(r.rating),
+          date: r.date,
         },
-      }]);
+      });
     }
 
-    console.log('Professor data and reviews stored successfully');
+    await index.upsert(upserts);
+    console.log("Pinecone upsert complete:", upserts.length, "vectors");
   } catch (error: unknown) {
-    console.error('Detailed error in storing professor data:', error);
+    console.error("Detailed error in storing professor data:", error);
     if (error instanceof Error) {
       throw new Error(`Failed to store professor data: ${error.message}`);
     } else {
-      throw new Error('Failed to store professor data: An unknown error occurred');
+      throw new Error("Failed to store professor data: An unknown error occurred");
     }
   }
 }
